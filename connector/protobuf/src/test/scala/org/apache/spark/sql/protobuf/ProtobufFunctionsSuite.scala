@@ -1794,6 +1794,40 @@ class ProtobufFunctionsSuite extends QueryTest with SharedSparkSession with Prot
     }
   }
 
+  test("SPARK-XXXXX: from_protobuf should correctly deserialize false boolean values") {
+    val messageDescriptor = BoolValue.getDescriptor
+    val schema = new StructType().add("bool_field", BooleanType)
+
+    val messageFalse = BoolValue.newBuilder().setValue(false).build()
+    val messageTrue = BoolValue.newBuilder().setValue(true).build()
+    val messageEmpty = BoolValue.getDefaultInstance
+
+    val encodedFalse = messageFalse.toByteArray
+    val encodedTrue = messageTrue.toByteArray
+    val encodedEmpty = messageEmpty.toByteArray
+
+    val df = Seq(
+      Row(encodedTrue),
+      Row(encodedFalse),
+      Row(encodedEmpty)
+    )
+
+    val binarySchema = new StructType().add("payload", BinaryType)
+
+    val input = spark.createDataFrame(
+      spark.sparkContext.parallelize(df),
+      binarySchema
+    )
+
+    val result = input.selectExpr(s"from_protobuf(payload, '${schema.json}', 'messageName'='google.protobuf.BoolValue') AS data")
+      .select("data.bool_field")
+      .collect()
+
+    assert(result(0).getBoolean(0)) // true
+    assert(result(1).getBoolean(0) == false) // false
+    assert(result(2).isNullAt(0)) // null
+  }
+
 
   test("well known types deserialization and round trip") {
     val message = spark.range(1).select(

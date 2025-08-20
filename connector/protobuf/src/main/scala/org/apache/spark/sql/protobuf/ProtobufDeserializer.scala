@@ -271,12 +271,12 @@ private[sql] class ProtobufDeserializer(
         if protoType.getMessageType.getFullName == BoolValue.getDescriptor.getFullName =>
         (updater, ordinal, value) =>
           val dm = value.asInstanceOf[DynamicMessage]
-          val unwrapped = getFieldValue(dm, dm.getDescriptorForType.getFields.get(0))
-          if (unwrapped == null) {
-            updater.setNullAt(ordinal)
-          } else {
-            updater.setBoolean(ordinal, unwrapped.asInstanceOf[Boolean])
-          }
+          val field = dm.getDescriptorForType.getFields.get(0)
+        if (dm.hasField(field)) {
+          updater.setBoolean(ordinal, dm.getField(field).asInstanceOf[Boolean])
+        } else {
+          updater.setNullAt(ordinal)
+        }
       case (MESSAGE, IntegerType)
         if (protoType.getMessageType.getFullName == Int32Value.getDescriptor.getFullName
           || protoType.getMessageType.getFullName == UInt32Value.getDescriptor.getFullName) =>
