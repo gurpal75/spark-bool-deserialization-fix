@@ -38,7 +38,10 @@ trait ProtobufTestBase extends SQLTestUtils {
    * all the Protobuf files. As a result actual file path returned in each case is different.
    */
   protected def protobufDescriptorFile(fileName: String): String = {
+    /*
     val dir = descriptorDir.toFile.getCanonicalPath
+     */
+    val dir = "C:/Users/gurjo/Desktop/spark-bool-deserialization-fix/connector/protobuf/target/generated-test-sources"
     if (new File(s"$dir/$fileName").exists) {
       s"$dir/$fileName"
     } else { // sbt test

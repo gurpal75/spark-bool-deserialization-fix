@@ -268,10 +268,15 @@ private[sql] class ProtobufDeserializer(
       // Handle well known wrapper types. We unpack the value field when the desired
       // output type is a primitive (determined by the option in [[ProtobufOptions]])
       case (MESSAGE, BooleanType)
-        if protoType.getMessageType.getFullName == BoolValue.getDescriptor.getFullName =>
+        if (protoType.getFullName.contains(BoolValue.getDescriptor.getFullName)
+          || protoType.getMessageType.getFullName == BoolValue.getDescriptor.getFullName) =>
         (updater, ordinal, value) =>
           val dm = value.asInstanceOf[DynamicMessage]
           val field = dm.getDescriptorForType.getFields.get(0)
+          // scalastyle:off
+          println(s"field : ${field}")
+          println(s"field get value: ${dm.getField(field)}")
+          // scalastyle:on
         if (dm.hasField(field)) {
           updater.setBoolean(ordinal, dm.getField(field).asInstanceOf[Boolean])
         } else {
@@ -460,11 +465,13 @@ private[sql] class ProtobufDeserializer(
         || record.hasField(field)
         || field.hasDefaultValue
         || (!field.hasPresence && this.emitDefaultValues)
+        || field.getContainingType.getFullName == "google.protobuf.BoolValue"
     ) {
       record.getField(field)
     } else {
       null
     }
+
   }
 
   // TODO: All of the code below this line is same between protobuf and avro, it can be shared.
